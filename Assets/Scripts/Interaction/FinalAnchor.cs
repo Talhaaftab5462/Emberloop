@@ -11,9 +11,6 @@ public class FinalAnchor : MonoBehaviour
     public AudioSource audioSource;
     public AudioClip activationClip;
 
-    [ColorUsage(true, true)] public Color inactiveEmission = new Color(0.03f, 0.01f, 0.005f, 1f);
-    [ColorUsage(true, true)] public Color activeEmission = new Color(4.5f, 1.2f, 0.12f, 1f);
-
     private readonly HashSet<Collider> activeShadows = new HashSet<Collider>();
     private Material runtimeMaterial;
 
@@ -66,16 +63,27 @@ public class FinalAnchor : MonoBehaviour
 
     private void RefreshVisual()
     {
+        Color idle = requireFirelight
+            ? new Color(1.2f, .14f, .015f, 1f)
+            : new Color(.03f, .25f, 1.1f, 1f);
+
+        Color active = requireFirelight
+            ? new Color(4.5f, 1.0f, .08f, 1f)
+            : new Color(.15f, 1.25f, 3.6f, 1f);
+
         if (runtimeMaterial != null)
         {
             runtimeMaterial.EnableKeyword("_EMISSION");
-            runtimeMaterial.SetColor("_EmissionColor", IsActive ? activeEmission : inactiveEmission);
+            if (runtimeMaterial.HasProperty("_EmissionColor"))
+                runtimeMaterial.SetColor("_EmissionColor", IsActive ? active : idle);
         }
 
         if (indicatorLight != null)
         {
-            indicatorLight.enabled = IsActive;
-            indicatorLight.intensity = IsActive ? 4f : 0f;
+            indicatorLight.enabled = true;
+            indicatorLight.color = requireFirelight ? new Color(1f, .22f, .03f) : new Color(.1f, .42f, 1f);
+            indicatorLight.intensity = IsActive ? 4f : .55f;
+            indicatorLight.shadows = LightShadows.None;
         }
     }
 }

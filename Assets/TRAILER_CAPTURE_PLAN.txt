@@ -1,0 +1,24 @@
+EMBERLOOP — 3:00 TRAILER CAPTURE PLAN
+
+IMPORTANT: the competition requires roughly 2 minutes of real gameplay footage. Record the built game with OBS; do not use the Unity editor for final gameplay capture.
+
+Record these clips, each 10-25 seconds with a clean start/end:
+A. Opening crypt: slow look at the first blue rune and first rewind.
+B. Echo reveal: show the previous echo repeating the path.
+C. Ember Vault: pick up Spark, ignite brazier, rewind, show flame persists.
+D. Firebound rune: echo enters orange rune in firelight and opens Gate II.
+E. Split Sanctum: wide look at twin pits; show two echoes splitting to separate runes.
+F. Final Ritual: three echoes approaching the three sigils.
+G. Beacon ready: all sigils active and beacon brightens.
+H. Ending: step into beacon through full title card.
+
+Suggested final timeline:
+00:00-00:18 cinematic-style environment/opening + title cards
+00:18-00:48 gameplay: Time / first rewind / echo
+00:48-01:20 gameplay: Fire / Spark / persistent brazier
+01:20-01:55 gameplay: Split Sanctum / two-echo solution
+01:55-02:28 gameplay: Ritual of Three / three echoes
+02:28-02:45 ending cinematic/title
+02:45-03:00 themes + team + GitHub / final logo
+
+Keep total direct gameplay >= 2:00.

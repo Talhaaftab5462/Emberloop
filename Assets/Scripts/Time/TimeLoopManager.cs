@@ -1,16 +1,19 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class TimeLoopManager : MonoBehaviour
 {
-    public float loopDuration = 10f;
-
+    public float loopDuration = 26f;
     public Transform player;
     public GameObject shadowPrefab;
-    public DoorController[] doorsToReset;
-    public PressurePlate[] platesToReset;
-    public FinalAnchor[] finalAnchorsToReset = new FinalAnchor[0];
+    public DoorController[] doorsToReset = Array.Empty<DoorController>();
+    public PressurePlate[] platesToReset = Array.Empty<PressurePlate>();
+    public FinalAnchor[] finalAnchorsToReset = Array.Empty<FinalAnchor>();
     public TimeResetFX resetFX;
+
+    public event Action LoopReset;
+    public event Action CheckpointChanged;
 
     private float timer;
     private Vector3 startPosition;
@@ -18,6 +21,7 @@ public class TimeLoopManager : MonoBehaviour
     private PlayerRecorder playerRecorder;
     private readonly List<ShadowPlayback> activeShadows = new List<ShadowPlayback>();
     private int loopNumber = 1;
+    private bool initialized;
 
     public float RemainingTime => Mathf.Max(0f, timer);
     public int LoopNumber => loopNumber;
@@ -28,6 +32,7 @@ public class TimeLoopManager : MonoBehaviour
         if (player == null)
         {
             Debug.LogError("Player is not assigned in TimeLoopManager.");
+            enabled = false;
             return;
         }
 
@@ -35,48 +40,54 @@ public class TimeLoopManager : MonoBehaviour
         if (playerRecorder == null)
         {
             Debug.LogError("PlayerRecorder is missing from Player.");
+            enabled = false;
             return;
         }
 
         startPosition = player.position;
         startRotation = player.rotation;
         timer = loopDuration;
+        initialized = true;
     }
 
     void Update()
     {
+        if (!initialized) return;
+
         timer -= Time.deltaTime;
-        if (timer <= 0f)
+        if (Input.GetKeyDown(KeyCode.R) && timer > 0.35f)
+            ForceReset();
+        else if (timer <= 0f)
             ResetLoop();
     }
 
-    void ResetLoop()
+    public void ForceReset()
+    {
+        if (!initialized || !enabled) return;
+        ResetLoop();
+    }
+
+    private void ResetLoop()
     {
         List<RecordedFrame> recordedFrames = playerRecorder.GetRecordedFrames();
         resetFX?.PlayResetFX();
 
         if (doorsToReset != null)
-        {
             foreach (DoorController door in doorsToReset)
                 if (door != null) door.ResetDoor();
-        }
 
         if (platesToReset != null)
-        {
             foreach (PressurePlate plate in platesToReset)
                 if (plate != null) plate.ResetPlate();
-        }
 
         if (finalAnchorsToReset != null)
-        {
             foreach (FinalAnchor anchor in finalAnchorsToReset)
                 if (anchor != null) anchor.ResetAnchor();
-        }
 
         foreach (ShadowPlayback shadow in activeShadows)
             if (shadow != null) shadow.RestartPlayback();
 
-        if (shadowPrefab != null && recordedFrames.Count > 0)
+        if (shadowPrefab != null && recordedFrames.Count > 1)
         {
             GameObject shadowObject = Instantiate(shadowPrefab, startPosition, startRotation);
             ShadowPlayback playback = shadowObject.GetComponent<ShadowPlayback>();
@@ -96,11 +107,12 @@ public class TimeLoopManager : MonoBehaviour
         playerRecorder.ClearRecording();
         timer = loopDuration;
         loopNumber++;
+        LoopReset?.Invoke();
     }
 
-    public void SetLoopCheckpoint(Transform checkpoint)
+    public void SetLoopCheckpoint(Transform checkpoint, float durationOverride = -1f)
     {
-        if (checkpoint == null)
+        if (checkpoint == null || !initialized)
             return;
 
         startPosition = checkpoint.position;
@@ -111,13 +123,13 @@ public class TimeLoopManager : MonoBehaviour
 
         activeShadows.Clear();
         playerRecorder.ClearRecording();
+
+        if (durationOverride > 1f)
+            loopDuration = durationOverride;
+
         timer = loopDuration;
         loopNumber = 1;
-
-        CharacterController controller = player.GetComponent<CharacterController>();
-        if (controller != null) controller.enabled = false;
-        player.position = startPosition;
-        player.rotation = startRotation;
-        if (controller != null) controller.enabled = true;
+        CheckpointChanged?.Invoke();
+        resetFX?.PlayResetFX();
     }
 }

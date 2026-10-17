@@ -2,19 +2,8 @@ using UnityEngine;
 
 public class ShadowState : MonoBehaviour
 {
-    public bool IsLit
-    {
-        get
-        {
-            return FireLightZone.IsPointInsideAnyFirelight(
-                transform.position
-            );
-        }
-    }
-
-    public void ResetLightState()
-    {
-        // No stored light state anymore.
-        // Kept so ShadowPlayback does not need changing.
-    }
+    public bool IsLit => FireLightZone.IsPointInsideAnyFirelight(transform.position + Vector3.up * 0.7f);
+    public bool IsIgnited => IsLit;
+    public void ResetLightState() { }
+    public void Ignite() { }
 }

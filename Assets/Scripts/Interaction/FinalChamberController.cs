@@ -10,6 +10,7 @@ public class FinalChamberController : MonoBehaviour
     public PlayerRecorder playerRecorder;
     public Light beaconLight;
     public ParticleSystem beaconParticles;
+    public SafeFlameVisual beaconFlame;
 
     [Header("Audio")]
     public AudioSource impactSource;
@@ -17,7 +18,7 @@ public class FinalChamberController : MonoBehaviour
     public AudioSource ritualHumSource;
 
     [Header("Beacon State")]
-    public float dormantIntensity = 1.2f;
+    public float dormantIntensity = 1.4f;
     public float readyIntensity = 7f;
     public float finalIntensity = 14f;
 
@@ -28,8 +29,7 @@ public class FinalChamberController : MonoBehaviour
     void Start()
     {
         ApplyBeaconState(false);
-        if (ritualHumSource != null && !ritualHumSource.isPlaying)
-            ritualHumSource.Play();
+        if (ritualHumSource != null && !ritualHumSource.isPlaying) ritualHumSource.Play();
     }
 
     public void NotifyAnchorStateChanged()
@@ -39,6 +39,8 @@ public class FinalChamberController : MonoBehaviour
         if (nowReady == ready) return;
         ready = nowReady;
         ApplyBeaconState(ready);
+        // The controller already draws the ready prompt. Avoid a second tutorial message
+        // occupying the same screen region and overlapping it.
     }
 
     private void ApplyBeaconState(bool isReady)
@@ -46,16 +48,17 @@ public class FinalChamberController : MonoBehaviour
         if (beaconLight != null)
         {
             beaconLight.intensity = isReady ? readyIntensity : dormantIntensity;
-            beaconLight.range = isReady ? 11f : 7f;
+            beaconLight.range = isReady ? 12f : 7f;
         }
-
         if (beaconParticles != null)
         {
             var emission = beaconParticles.emission;
             emission.rateOverTime = isReady ? 42f : 10f;
-            var main = beaconParticles.main;
-            main.startSize = isReady ? 0.75f : 0.35f;
-            main.startLifetime = isReady ? 1.5f : 0.85f;
+        }
+        if (beaconFlame != null)
+        {
+            beaconFlame.lightBaseIntensity = isReady ? 6.5f : 2.2f;
+            beaconFlame.transform.localScale = isReady ? Vector3.one * 1.65f : Vector3.one;
         }
     }
 
@@ -71,31 +74,27 @@ public class FinalChamberController : MonoBehaviour
         if (loopManager != null) loopManager.enabled = false;
         if (playerRecorder != null) playerRecorder.enabled = false;
         if (playerController != null) playerController.enabled = false;
+        foreach (ShadowPlayback shadow in FindObjectsByType<ShadowPlayback>(FindObjectsSortMode.None)) shadow.enabled = false;
 
-        foreach (ShadowPlayback shadow in FindObjectsByType<ShadowPlayback>(FindObjectsSortMode.None))
-            shadow.enabled = false;
-
-        if (impactSource != null && beaconImpactClip != null)
-            impactSource.PlayOneShot(beaconImpactClip, 1f);
-        if (ritualHumSource != null)
-            ritualHumSource.Stop();
-
-        if (beaconLight != null)
+        // End-state owns the screen and audio. Stop movement sounds immediately and hide
+        // the normal HUD/tutorial so no text can overlap the title card.
+        if (playerController != null)
         {
-            beaconLight.intensity = finalIntensity;
-            beaconLight.range = 16f;
+            var footsteps = playerController.GetComponent<PlayerFootsteps>();
+            if (footsteps != null) footsteps.StopFootsteps();
+            foreach (AudioSource src in playerController.GetComponents<AudioSource>()) src.Stop();
         }
+        var hud = FindFirstObjectByType<EmberloopHUD>();
+        if (hud != null) hud.enabled = false;
+        var tutorial = FindFirstObjectByType<TutorialOverlay>();
+        if (tutorial != null) tutorial.enabled = false;
 
-        if (beaconParticles != null)
-        {
-            var emission = beaconParticles.emission;
-            emission.rateOverTime = 110f;
-            var main = beaconParticles.main;
-            main.startSize = 1.25f;
-            main.startLifetime = 2.2f;
-        }
+        if (impactSource != null && beaconImpactClip != null) impactSource.PlayOneShot(beaconImpactClip, 1f);
+        if (ritualHumSource != null) ritualHumSource.Stop();
+        if (beaconLight != null) { beaconLight.intensity = finalIntensity; beaconLight.range = 18f; }
+        if (beaconFlame != null) { beaconFlame.lightBaseIntensity = 12f; beaconFlame.transform.localScale = Vector3.one * 2.6f; }
 
-        float duration = 2.2f;
+        float duration = 2.7f;
         float elapsed = 0f;
         while (elapsed < duration)
         {
@@ -103,7 +102,6 @@ public class FinalChamberController : MonoBehaviour
             endingFade = Mathf.Clamp01(elapsed / duration);
             yield return null;
         }
-
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -113,41 +111,25 @@ public class FinalChamberController : MonoBehaviour
         if (completed)
         {
             Color old = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, endingFade * 0.92f);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = new Color(1f, 0.65f, 0.25f, endingFade);
-
-            GUIStyle title = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = Mathf.Clamp(Screen.height / 12, 36, 92),
-                fontStyle = FontStyle.Bold
-            };
-            GUIStyle subtitle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = Mathf.Clamp(Screen.height / 32, 18, 36)
-            };
-
-            GUI.Label(new Rect(0, Screen.height * 0.35f, Screen.width, 120), "EMBERLOOP", title);
-            GUI.color = new Color(1f, 0.9f, 0.75f, endingFade);
-            GUI.Label(new Rect(0, Screen.height * 0.53f, Screen.width, 55), "THE LOOP IS BROKEN", subtitle);
-            GUI.Label(new Rect(0, Screen.height * 0.60f, Screen.width, 45), "FIRE  •  SHADOW  •  TIME", subtitle);
+            GUI.color = new Color(0f,0f,0f,endingFade*.94f);
+            GUI.DrawTexture(new Rect(0,0,Screen.width,Screen.height), Texture2D.whiteTexture);
+            GUI.color = new Color(1f,.58f,.18f,endingFade);
+            GUIStyle title = new GUIStyle(GUI.skin.label){alignment=TextAnchor.MiddleCenter,fontSize=Mathf.Clamp(Screen.height/12,36,92),fontStyle=FontStyle.Bold};
+            GUIStyle sub = new GUIStyle(GUI.skin.label){alignment=TextAnchor.MiddleCenter,fontSize=Mathf.Clamp(Screen.height/32,18,36)};
+            GUI.Label(new Rect(0,Screen.height*.34f,Screen.width,120),"EMBERLOOP",title);
+            GUI.color = new Color(1f,.9f,.75f,endingFade);
+            GUI.Label(new Rect(0,Screen.height*.53f,Screen.width,55),"THE LOOP IS BROKEN",sub);
+            GUI.Label(new Rect(0,Screen.height*.60f,Screen.width,45),"FIRE  •  SHADOW  •  TIME",sub);
             GUI.color = old;
             return;
         }
 
         if (ready)
         {
-            GUIStyle prompt = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = Mathf.Clamp(Screen.height / 40, 18, 30),
-                fontStyle = FontStyle.Bold
-            };
+            GUIStyle prompt = new GUIStyle(GUI.skin.label){alignment=TextAnchor.MiddleCenter,fontSize=Mathf.Clamp(Screen.height/40,18,30),fontStyle=FontStyle.Bold};
             Color old = GUI.color;
-            GUI.color = new Color(1f, 0.72f, 0.3f, 1f);
-            GUI.Label(new Rect(0, Screen.height * 0.78f, Screen.width, 45), "THE BEACON ANSWERS — STEP INTO THE FLAME", prompt);
+            GUI.color = new Color(1f,.72f,.3f,1f);
+            GUI.Label(new Rect(0,Screen.height*.68f,Screen.width,45),"THE BEACON ANSWERS — STEP INTO THE FLAME",prompt);
             GUI.color = old;
         }
     }
