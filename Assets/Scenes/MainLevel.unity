@@ -1165,6 +1165,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PressurePlate
   door: {fileID: 0}
+  multiPlateDoor: {fileID: 937981736}
+  isPlateA: 1
   requireFirelight: 0
 --- !u!54 &63545066
 Rigidbody:
@@ -9935,7 +9937,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0092031b51191247a1d4bd5b4be94a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MultiPlateDoor
-  door: {fileID: 0}
+  door: {fileID: 1226275407}
 --- !u!1001 &943352047
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18136,6 +18138,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PressurePlate
   door: {fileID: 29034295}
+  multiPlateDoor: {fileID: 0}
+  isPlateA: 1
   requireFirelight: 1
 --- !u!54 &1826378506
 Rigidbody:
@@ -20336,6 +20340,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PressurePlate
   door: {fileID: 532065576}
+  multiPlateDoor: {fileID: 0}
+  isPlateA: 1
   requireFirelight: 0
 --- !u!54 &2008864771
 Rigidbody:
@@ -21387,6 +21393,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PressurePlate
   door: {fileID: 0}
+  multiPlateDoor: {fileID: 937981736}
+  isPlateA: 0
   requireFirelight: 1
 --- !u!54 &2092692156
 Rigidbody:
@@ -22257,9 +22265,9 @@ SceneRoots:
   - {fileID: 1840443921}
   - {fileID: 90660858}
   - {fileID: 2063046597}
+  - {fileID: 728706959}
+  - {fileID: 937981735}
   - {fileID: 63545070}
   - {fileID: 2092692154}
   - {fileID: 77596633}
   - {fileID: 1226275406}
-  - {fileID: 728706959}
-  - {fileID: 937981735}
