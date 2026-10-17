@@ -4,40 +4,32 @@ public class PressurePlate : MonoBehaviour
 {
     public DoorController door;
 
+    [Header("Shadow Rules")]
+    public bool requireFirelight = true;
+
     private int objectsOnPlate = 0;
 
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-
             ActivatePlate();
             return;
         }
 
         if (other.CompareTag("Shadow"))
         {
-            ShadowState shadowState = other.GetComponent<ShadowState>();
-
-            if (shadowState == null)
+            if (!requireFirelight)
             {
-                Debug.LogError("Shadow has NO ShadowState component!");
+                ActivatePlate();
                 return;
             }
 
-            Debug.Log(
-                "SHADOW touched plate. IsLit = " +
-                shadowState.IsLit
-            );
+            ShadowState shadowState = other.GetComponent<ShadowState>();
 
-            if (shadowState.IsLit)
+            if (shadowState != null && shadowState.IsLit)
             {
-                Debug.Log("SHADOW accepted because it is lit.");
                 ActivatePlate();
-            }
-            else
-            {
-                Debug.Log("SHADOW rejected because it is NOT lit.");
             }
         }
     }
@@ -52,6 +44,12 @@ public class PressurePlate : MonoBehaviour
 
         if (other.CompareTag("Shadow"))
         {
+            if (!requireFirelight)
+            {
+                DeactivatePlate();
+                return;
+            }
+
             ShadowState shadowState = other.GetComponent<ShadowState>();
 
             if (shadowState != null && shadowState.IsLit)
