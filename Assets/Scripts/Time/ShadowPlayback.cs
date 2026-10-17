@@ -22,6 +22,13 @@ public class ShadowPlayback : MonoBehaviour
         playbackTime = 0f;
         currentFrameIndex = 0;
 
+        ShadowState shadowState = GetComponent<ShadowState>();
+
+        if (shadowState != null)
+        {
+            shadowState.ResetLightState();
+        }
+
         transform.position = frames[0].position;
         transform.rotation = frames[0].rotation;
     }

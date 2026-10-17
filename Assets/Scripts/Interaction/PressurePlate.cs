@@ -8,47 +8,80 @@ public class PressurePlate : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Entered pressure plate: " + other.name + " | Tag: " + other.tag);
-
-        if (
-            other.CompareTag("Player") ||
-            other.CompareTag("Shadow")
-        )
+        if (other.CompareTag("Player"))
         {
-            objectsOnPlate++;
 
-            Debug.Log("VALID object activated plate.");
+            ActivatePlate();
+            return;
+        }
 
-            if (door != null)
+        if (other.CompareTag("Shadow"))
+        {
+            ShadowState shadowState = other.GetComponent<ShadowState>();
+
+            if (shadowState == null)
             {
-                door.SetOpen(true);
+                Debug.LogError("Shadow has NO ShadowState component!");
+                return;
+            }
+
+            Debug.Log(
+                "SHADOW touched plate. IsLit = " +
+                shadowState.IsLit
+            );
+
+            if (shadowState.IsLit)
+            {
+                Debug.Log("SHADOW accepted because it is lit.");
+                ActivatePlate();
             }
             else
             {
-                Debug.LogError("Door is NOT assigned to PressurePlate!");
+                Debug.Log("SHADOW rejected because it is NOT lit.");
             }
         }
     }
 
     void OnTriggerExit(Collider other)
     {
-        Debug.Log("Exited pressure plate: " + other.name);
-
-        if (
-            other.CompareTag("Player") ||
-            other.CompareTag("Shadow")
-        )
+        if (other.CompareTag("Player"))
         {
-            objectsOnPlate--;
+            DeactivatePlate();
+            return;
+        }
 
-            if (objectsOnPlate <= 0)
+        if (other.CompareTag("Shadow"))
+        {
+            ShadowState shadowState = other.GetComponent<ShadowState>();
+
+            if (shadowState != null && shadowState.IsLit)
             {
-                objectsOnPlate = 0;
+                DeactivatePlate();
+            }
+        }
+    }
 
-                if (door != null)
-                {
-                    door.SetOpen(false);
-                }
+    void ActivatePlate()
+    {
+        objectsOnPlate++;
+
+        if (door != null)
+        {
+            door.SetOpen(true);
+        }
+    }
+
+    void DeactivatePlate()
+    {
+        objectsOnPlate--;
+
+        if (objectsOnPlate <= 0)
+        {
+            objectsOnPlate = 0;
+
+            if (door != null)
+            {
+                door.SetOpen(false);
             }
         }
     }
