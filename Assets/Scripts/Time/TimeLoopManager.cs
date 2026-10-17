@@ -9,6 +9,7 @@ public class TimeLoopManager : MonoBehaviour
     public GameObject shadowPrefab;
     public DoorController[] doorsToReset;
     public PressurePlate[] platesToReset;
+    public FinalAnchor[] finalAnchorsToReset = new FinalAnchor[0];
 
     private float timer;
 
@@ -70,6 +71,14 @@ public class TimeLoopManager : MonoBehaviour
             if (plate != null)
             {
                 plate.ResetPlate();
+            }
+        }
+
+        foreach (FinalAnchor anchor in finalAnchorsToReset)
+        {
+            if (anchor != null)
+            {
+                anchor.ResetAnchor();
             }
         }
 
