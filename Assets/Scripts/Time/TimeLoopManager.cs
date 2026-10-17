@@ -10,16 +10,18 @@ public class TimeLoopManager : MonoBehaviour
     public DoorController[] doorsToReset;
     public PressurePlate[] platesToReset;
     public FinalAnchor[] finalAnchorsToReset = new FinalAnchor[0];
+    public TimeResetFX resetFX;
 
     private float timer;
-
     private Vector3 startPosition;
     private Quaternion startRotation;
-
     private PlayerRecorder playerRecorder;
+    private readonly List<ShadowPlayback> activeShadows = new List<ShadowPlayback>();
+    private int loopNumber = 1;
 
-    private List<ShadowPlayback> activeShadows =
-        new List<ShadowPlayback>();
+    public float RemainingTime => Mathf.Max(0f, timer);
+    public int LoopNumber => loopNumber;
+    public int ActiveShadowCount => activeShadows.Count;
 
     void Start()
     {
@@ -30,7 +32,6 @@ public class TimeLoopManager : MonoBehaviour
         }
 
         playerRecorder = player.GetComponent<PlayerRecorder>();
-
         if (playerRecorder == null)
         {
             Debug.LogError("PlayerRecorder is missing from Player.");
@@ -39,74 +40,46 @@ public class TimeLoopManager : MonoBehaviour
 
         startPosition = player.position;
         startRotation = player.rotation;
-
         timer = loopDuration;
     }
 
     void Update()
     {
         timer -= Time.deltaTime;
-
         if (timer <= 0f)
-        {
             ResetLoop();
-        }
     }
 
     void ResetLoop()
     {
-        List<RecordedFrame> recordedFrames =
-            playerRecorder.GetRecordedFrames();
+        List<RecordedFrame> recordedFrames = playerRecorder.GetRecordedFrames();
+        resetFX?.PlayResetFX();
 
-        foreach (DoorController door in doorsToReset)
+        if (doorsToReset != null)
         {
-            if (door != null)
-            {
-                door.ResetDoor();
-            }
+            foreach (DoorController door in doorsToReset)
+                if (door != null) door.ResetDoor();
         }
 
-        foreach (PressurePlate plate in platesToReset)
+        if (platesToReset != null)
         {
-            if (plate != null)
-            {
-                plate.ResetPlate();
-            }
+            foreach (PressurePlate plate in platesToReset)
+                if (plate != null) plate.ResetPlate();
         }
 
-        foreach (FinalAnchor anchor in finalAnchorsToReset)
+        if (finalAnchorsToReset != null)
         {
-            if (anchor != null)
-            {
-                anchor.ResetAnchor();
-            }
+            foreach (FinalAnchor anchor in finalAnchorsToReset)
+                if (anchor != null) anchor.ResetAnchor();
         }
 
-        // Restart every shadow from previous loops.
         foreach (ShadowPlayback shadow in activeShadows)
+            if (shadow != null) shadow.RestartPlayback();
+
+        if (shadowPrefab != null && recordedFrames.Count > 0)
         {
-            if (shadow != null)
-            {
-                shadow.RestartPlayback();
-            }
-        }
-
-        // Create the new shadow for the loop that just ended.
-        if (
-            shadowPrefab != null &&
-            recordedFrames.Count > 0
-        )
-        {
-            GameObject shadowObject =
-                Instantiate(
-                    shadowPrefab,
-                    startPosition,
-                    startRotation
-                );
-
-            ShadowPlayback playback =
-                shadowObject.GetComponent<ShadowPlayback>();
-
+            GameObject shadowObject = Instantiate(shadowPrefab, startPosition, startRotation);
+            ShadowPlayback playback = shadowObject.GetComponent<ShadowPlayback>();
             if (playback != null)
             {
                 playback.Initialize(recordedFrames);
@@ -114,21 +87,15 @@ public class TimeLoopManager : MonoBehaviour
             }
         }
 
-        CharacterController controller =
-            player.GetComponent<CharacterController>();
-
-        if (controller != null)
-            controller.enabled = false;
-
+        CharacterController controller = player.GetComponent<CharacterController>();
+        if (controller != null) controller.enabled = false;
         player.position = startPosition;
         player.rotation = startRotation;
-
-        if (controller != null)
-            controller.enabled = true;
+        if (controller != null) controller.enabled = true;
 
         playerRecorder.ClearRecording();
-
         timer = loopDuration;
+        loopNumber++;
     }
 
     public void SetLoopCheckpoint(Transform checkpoint)
@@ -140,29 +107,17 @@ public class TimeLoopManager : MonoBehaviour
         startRotation = checkpoint.rotation;
 
         foreach (ShadowPlayback shadow in activeShadows)
-        {
-            if (shadow != null)
-            {
-                Destroy(shadow.gameObject);
-            }
-        }
+            if (shadow != null) Destroy(shadow.gameObject);
 
         activeShadows.Clear();
-
         playerRecorder.ClearRecording();
-
         timer = loopDuration;
+        loopNumber = 1;
 
-        CharacterController controller =
-            player.GetComponent<CharacterController>();
-
-        if (controller != null)
-            controller.enabled = false;
-
+        CharacterController controller = player.GetComponent<CharacterController>();
+        if (controller != null) controller.enabled = false;
         player.position = startPosition;
         player.rotation = startRotation;
-
-        if (controller != null)
-            controller.enabled = true;
+        if (controller != null) controller.enabled = true;
     }
 }

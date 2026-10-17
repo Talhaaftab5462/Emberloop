@@ -11,6 +11,11 @@ public class FinalChamberController : MonoBehaviour
     public Light beaconLight;
     public ParticleSystem beaconParticles;
 
+    [Header("Audio")]
+    public AudioSource impactSource;
+    public AudioClip beaconImpactClip;
+    public AudioSource ritualHumSource;
+
     [Header("Beacon State")]
     public float dormantIntensity = 1.2f;
     public float readyIntensity = 7f;
@@ -23,17 +28,15 @@ public class FinalChamberController : MonoBehaviour
     void Start()
     {
         ApplyBeaconState(false);
+        if (ritualHumSource != null && !ritualHumSource.isPlaying)
+            ritualHumSource.Play();
     }
 
     public void NotifyAnchorStateChanged()
     {
-        if (completed)
-            return;
-
+        if (completed) return;
         bool nowReady = anchors != null && anchors.Length >= 3 && anchors.All(a => a != null && a.IsActive);
-        if (nowReady == ready)
-            return;
-
+        if (nowReady == ready) return;
         ready = nowReady;
         ApplyBeaconState(ready);
     }
@@ -58,26 +61,24 @@ public class FinalChamberController : MonoBehaviour
 
     public void TryCompleteGame()
     {
-        if (!ready || completed)
-            return;
-
+        if (!ready || completed) return;
         completed = true;
         StartCoroutine(EndingSequence());
     }
 
     private IEnumerator EndingSequence()
     {
-        if (loopManager != null)
-            loopManager.enabled = false;
-        if (playerRecorder != null)
-            playerRecorder.enabled = false;
-        if (playerController != null)
-            playerController.enabled = false;
+        if (loopManager != null) loopManager.enabled = false;
+        if (playerRecorder != null) playerRecorder.enabled = false;
+        if (playerController != null) playerController.enabled = false;
 
         foreach (ShadowPlayback shadow in FindObjectsByType<ShadowPlayback>(FindObjectsSortMode.None))
-        {
             shadow.enabled = false;
-        }
+
+        if (impactSource != null && beaconImpactClip != null)
+            impactSource.PlayOneShot(beaconImpactClip, 1f);
+        if (ritualHumSource != null)
+            ritualHumSource.Stop();
 
         if (beaconLight != null)
         {

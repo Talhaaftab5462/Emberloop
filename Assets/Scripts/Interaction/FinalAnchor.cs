@@ -8,6 +8,8 @@ public class FinalAnchor : MonoBehaviour
     public FinalChamberController controller;
     public Renderer indicatorRenderer;
     public Light indicatorLight;
+    public AudioSource audioSource;
+    public AudioClip activationClip;
 
     [ColorUsage(true, true)] public Color inactiveEmission = new Color(0.03f, 0.01f, 0.005f, 1f);
     [ColorUsage(true, true)] public Color activeEmission = new Color(4.5f, 1.2f, 0.12f, 1f);
@@ -20,27 +22,16 @@ public class FinalAnchor : MonoBehaviour
     void Awake()
     {
         if (indicatorRenderer != null)
-        {
             runtimeMaterial = indicatorRenderer.material;
-        }
         RefreshVisual();
     }
 
-    void OnTriggerEnter(Collider other)
-    {
-        TryRefreshShadow(other);
-    }
-
-    void OnTriggerStay(Collider other)
-    {
-        TryRefreshShadow(other);
-    }
+    void OnTriggerEnter(Collider other) => TryRefreshShadow(other);
+    void OnTriggerStay(Collider other) => TryRefreshShadow(other);
 
     void OnTriggerExit(Collider other)
     {
-        if (!other.CompareTag("Shadow"))
-            return;
-
+        if (!other.CompareTag("Shadow")) return;
         if (activeShadows.Remove(other))
         {
             RefreshVisual();
@@ -50,21 +41,18 @@ public class FinalAnchor : MonoBehaviour
 
     private void TryRefreshShadow(Collider other)
     {
-        if (!other.CompareTag("Shadow"))
-            return;
+        if (!other.CompareTag("Shadow")) return;
 
         ShadowState shadowState = other.GetComponent<ShadowState>();
         bool valid = !requireFirelight || (shadowState != null && shadowState.IsLit);
-
-        bool changed;
-        if (valid)
-            changed = activeShadows.Add(other);
-        else
-            changed = activeShadows.Remove(other);
+        bool wasActive = IsActive;
+        bool changed = valid ? activeShadows.Add(other) : activeShadows.Remove(other);
 
         if (changed)
         {
             RefreshVisual();
+            if (!wasActive && IsActive && audioSource != null && activationClip != null)
+                audioSource.PlayOneShot(activationClip, 1f);
             controller?.NotifyAnchorStateChanged();
         }
     }
