@@ -1,30 +1,68 @@
+using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(SphereCollider))]
 public class FireLightZone : MonoBehaviour
 {
-    void OnTriggerEnter(Collider other)
+    private static readonly List<FireLightZone> activeZones =
+        new List<FireLightZone>();
+
+    private SphereCollider sphereCollider;
+
+    void Awake()
     {
-        if (!other.CompareTag("Shadow"))
-            return;
+        sphereCollider = GetComponent<SphereCollider>();
+    }
 
-        ShadowState shadowState = other.GetComponent<ShadowState>();
-
-        if (shadowState != null)
+    void OnEnable()
+    {
+        if (!activeZones.Contains(this))
         {
-            shadowState.EnterFirelight();
+            activeZones.Add(this);
         }
     }
 
-    void OnTriggerExit(Collider other)
+    void OnDisable()
     {
-        if (!other.CompareTag("Shadow"))
-            return;
+        activeZones.Remove(this);
+    }
 
-        ShadowState shadowState = other.GetComponent<ShadowState>();
+    public bool ContainsPoint(Vector3 worldPosition)
+    {
+        if (sphereCollider == null)
+            return false;
 
-        if (shadowState != null)
+        Vector3 worldCenter =
+            transform.TransformPoint(sphereCollider.center);
+
+        Vector3 scale = transform.lossyScale;
+
+        float largestScale =
+            Mathf.Max(
+                Mathf.Abs(scale.x),
+                Mathf.Abs(scale.y),
+                Mathf.Abs(scale.z)
+            );
+
+        float worldRadius =
+            sphereCollider.radius * largestScale;
+
+        return Vector3.Distance(
+            worldPosition,
+            worldCenter
+        ) <= worldRadius;
+    }
+
+    public static bool IsPointInsideAnyFirelight(Vector3 worldPosition)
+    {
+        foreach (FireLightZone zone in activeZones)
         {
-            shadowState.ExitFirelight();
+            if (zone != null && zone.ContainsPoint(worldPosition))
+            {
+                return true;
+            }
         }
+
+        return false;
     }
 }

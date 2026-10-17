@@ -2,29 +2,19 @@ using UnityEngine;
 
 public class ShadowState : MonoBehaviour
 {
-    private int lightSourcesTouching = 0;
-
     public bool IsLit
     {
-        get { return lightSourcesTouching > 0; }
-    }
-
-    public void EnterFirelight()
-    {
-        lightSourcesTouching++;
-    }
-
-    public void ExitFirelight()
-    {
-        lightSourcesTouching--;
-
-        if (lightSourcesTouching < 0)
-            lightSourcesTouching = 0;
-
+        get
+        {
+            return FireLightZone.IsPointInsideAnyFirelight(
+                transform.position
+            );
+        }
     }
 
     public void ResetLightState()
     {
-        lightSourcesTouching = 0;
+        // No stored light state anymore.
+        // Kept so ShadowPlayback does not need changing.
     }
 }

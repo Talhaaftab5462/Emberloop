@@ -1,19 +1,26 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PressurePlate : MonoBehaviour
 {
+    [Header("Single Door")]
     public DoorController door;
+
+    [Header("Multi-Plate Door")]
+    public MultiPlateDoor multiPlateDoor;
+    public bool isPlateA = true;
 
     [Header("Shadow Rules")]
     public bool requireFirelight = true;
 
-    private int objectsOnPlate = 0;
+    private HashSet<Collider> validCollidersOnPlate =
+        new HashSet<Collider>();
 
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            ActivatePlate();
+            AddValidCollider(other);
             return;
         }
 
@@ -21,7 +28,7 @@ public class PressurePlate : MonoBehaviour
         {
             if (!requireFirelight)
             {
-                ActivatePlate();
+                AddValidCollider(other);
                 return;
             }
 
@@ -29,58 +36,55 @@ public class PressurePlate : MonoBehaviour
 
             if (shadowState != null && shadowState.IsLit)
             {
-                ActivatePlate();
+                AddValidCollider(other);
             }
         }
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (validCollidersOnPlate.Contains(other))
         {
-            DeactivatePlate();
+            validCollidersOnPlate.Remove(other);
+            UpdateOutput();
+        }
+    }
+
+    void AddValidCollider(Collider other)
+    {
+        if (validCollidersOnPlate.Add(other))
+        {
+            UpdateOutput();
+        }
+    }
+
+    void UpdateOutput()
+    {
+        bool active = validCollidersOnPlate.Count > 0;
+
+        if (multiPlateDoor != null)
+        {
+            if (isPlateA)
+            {
+                multiPlateDoor.SetPlateA(active);
+            }
+            else
+            {
+                multiPlateDoor.SetPlateB(active);
+            }
+
             return;
         }
 
-        if (other.CompareTag("Shadow"))
-        {
-            if (!requireFirelight)
-            {
-                DeactivatePlate();
-                return;
-            }
-
-            ShadowState shadowState = other.GetComponent<ShadowState>();
-
-            if (shadowState != null && shadowState.IsLit)
-            {
-                DeactivatePlate();
-            }
-        }
-    }
-
-    void ActivatePlate()
-    {
-        objectsOnPlate++;
-
         if (door != null)
         {
-            door.SetOpen(true);
+            door.SetOpen(active);
         }
     }
 
-    void DeactivatePlate()
+    public void ResetPlate()
     {
-        objectsOnPlate--;
-
-        if (objectsOnPlate <= 0)
-        {
-            objectsOnPlate = 0;
-
-            if (door != null)
-            {
-                door.SetOpen(false);
-            }
-        }
+        validCollidersOnPlate.Clear();
+        UpdateOutput();
     }
 }

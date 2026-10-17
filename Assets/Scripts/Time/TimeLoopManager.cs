@@ -8,6 +8,7 @@ public class TimeLoopManager : MonoBehaviour
     public Transform player;
     public GameObject shadowPrefab;
     public DoorController[] doorsToReset;
+    public PressurePlate[] platesToReset;
 
     private float timer;
 
@@ -64,6 +65,14 @@ public class TimeLoopManager : MonoBehaviour
             }
         }
 
+        foreach (PressurePlate plate in platesToReset)
+        {
+            if (plate != null)
+            {
+                plate.ResetPlate();
+            }
+        }
+
         // Restart every shadow from previous loops.
         foreach (ShadowPlayback shadow in activeShadows)
         {
@@ -111,5 +120,40 @@ public class TimeLoopManager : MonoBehaviour
         playerRecorder.ClearRecording();
 
         timer = loopDuration;
+    }
+
+    public void SetLoopCheckpoint(Transform checkpoint)
+    {
+        if (checkpoint == null)
+            return;
+
+        startPosition = checkpoint.position;
+        startRotation = checkpoint.rotation;
+
+        foreach (ShadowPlayback shadow in activeShadows)
+        {
+            if (shadow != null)
+            {
+                Destroy(shadow.gameObject);
+            }
+        }
+
+        activeShadows.Clear();
+
+        playerRecorder.ClearRecording();
+
+        timer = loopDuration;
+
+        CharacterController controller =
+            player.GetComponent<CharacterController>();
+
+        if (controller != null)
+            controller.enabled = false;
+
+        player.position = startPosition;
+        player.rotation = startRotation;
+
+        if (controller != null)
+            controller.enabled = true;
     }
 }
